@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>MOON</title>
+    <link href="./css/fonttrial.css" type="text/css" rel="stylesheet">
+        <script>
+            var context;
+            var arr = new Array();
+            var starCount = 800;
+            var rains = new Array();
+            var rainCount = 20;
+    
+            function init() {
+                var stars = document.getElementById("stars");
+                windowWidth = window.innerWidth; //当前的窗口的高度
+                stars.width = windowWidth;
+                stars.height = window.innerHeight;
+                context = stars.getContext("2d");
+            }
+    
+            //创建一个星星对象
+            var Star = function () {
+                this.x = windowWidth * Math.random();//横坐标
+                this.y = 5000 * Math.random();//纵坐标
+                this.text = ".";//文本
+                this.color = "white";//颜色
+                this.getColor = function () {
+                    var _r = Math.random();
+                    if (_r < 0.5) {
+                        this.color = "#333";
+                    } else {
+                        this.color = "white";
+                    }
+                }
+    //初始化
+                this.init = function () {
+                    this.getColor();
+                }
+    //绘制
+                this.draw = function () {
+                    context.fillStyle = this.color;
+                    context.fillText(this.text, this.x, this.y);
+                }
+            }
+    
+            //画月亮
+            function drawMoon() {
+                var moon = new Image();
+                moon.src = "./images/moon.jpg"
+                context.drawImage(moon, -5, -10);
+            }
+    
+            //页面加载的时候
+            window.onload = function () {
+                init();
+    //画星星
+                for (var i = 0; i < starCount; i++) {
+                    var star = new Star();
+                    star.init();
+                    star.draw();
+                    arr.push(star);
+                }
+    //画流星
+                for (var i = 0; i < rainCount; i++) {
+                    var rain = new MeteorRain();
+                    rain.init();
+                    rain.draw();
+                    rains.push(rain);
+                }
+                drawMoon();//绘制月亮
+                playStars();//绘制闪动的星星
+                playRains();//绘制流星
+    
+            }
+    
+            //星星闪起来
+            function playStars() {
+                for (var n = 0; n < starCount; n++) {
+                    arr[n].getColor();
+                    arr[n].draw();
+                }
+    
+                setTimeout("playStars()", 100);
+            }
+    
+            /*流星雨开始*/
+            var MeteorRain = function () {
+                this.x = -1;
+                this.y = -1;
+                this.length = -1;//长度
+                this.angle = 30; //倾斜角度
+                this.width = -1;//宽度
+                this.height = -1;//高度
+                this.speed = 1;//速度
+                this.offset_x = -1;//横轴移动偏移量
+                this.offset_y = -1;//纵轴移动偏移量
+                this.alpha = 1; //透明度
+                this.color1 = "";//流星的色彩
+                this.color2 = ""; //流星的色彩
+                /****************初始化函数********************/
+                this.init = function () //初始化
+                {
+                    this.getPos();
+                    this.alpha = 1;//透明度
+                    this.getRandomColor();
+    //最小长度，最大长度
+                    var x = Math.random() * 80 + 150;
+                    this.length = Math.ceil(x);
+    // x = Math.random()*10+30;
+                    this.angle = 30; //流星倾斜角
+                    x = Math.random() + 0.5;
+                    this.speed = Math.ceil(x); //流星的速度
+                    var cos = Math.cos(this.angle * 3.14 / 180);
+                    var sin = Math.sin(this.angle * 3.14 / 180);
+                    this.width = this.length * cos; //流星所占宽度
+                    this.height = this.length * sin;//流星所占高度
+                    this.offset_x = this.speed * cos;
+                    this.offset_y = this.speed * sin;
+                }
+                /**************获取随机颜色函数*****************/
+                this.getRandomColor = function () {
+                    var a = Math.ceil(255 - 240 * Math.random());
+    //中段颜色
+                    this.color1 = "rgba(" + a + "," + a + "," + a + ",1)";
+    //结束颜色
+                    this.color2 = "black";
+                }
+                /***************重新计算流星坐标的函数******************/
+                this.countPos = function ()//
+                {
+    //往左下移动,x减少，y增加
+                    this.x = this.x - this.offset_x;
+                    this.y = this.y + this.offset_y;
+                }
+                /*****************获取随机坐标的函数*****************/
+                this.getPos = function () //
+                {
+    //横坐标200--1200
+                    this.x = Math.random() * window.innerWidth; //窗口高度
+    //纵坐标小于600
+                    this.y = Math.random() * window.innerHeight; //窗口宽度
+                }
+                /****绘制流星***************************/
+                this.draw = function () //绘制一个流星的函数
+                {
+                    context.save();
+                    context.beginPath();
+                    context.lineWidth = 1; //宽度
+                    context.globalAlpha = this.alpha; //设置透明度
+    //创建横向渐变颜色,起点坐标至终点坐标
+                    var line = context.createLinearGradient(this.x, this.y,
+                        this.x + this.width,
+                        this.y - this.height);
+    //分段设置颜色
+                    line.addColorStop(0, "white");
+                    line.addColorStop(0.3, this.color1);
+                    line.addColorStop(0.6, this.color2);
+                    context.strokeStyle = line;
+    //起点
+                    context.moveTo(this.x, this.y);
+    //终点
+                    context.lineTo(this.x + this.width, this.y - this.height);
+                    context.closePath();
+                    context.stroke();
+                    context.restore();
+                }
+                this.move = function () {
+    //清空流星像素
+                    var x = this.x + this.width - this.offset_x;
+                    var y = this.y - this.height;
+                    context.clearRect(x - 3, y - 3, this.offset_x + 5, this.offset_y + 5);
+    // context.strokeStyle="red";
+    // context.strokeRect(x,y-1,this.offset_x+1,this.offset_y+1);
+    //重新计算位置，往左下移动
+                    this.countPos();
+    //透明度增加
+                    this.alpha -= 0.002;
+    //重绘
+                    this.draw();
+                }
+            }
+    
+            //绘制流星
+            function playRains() {
+    
+                for (var n = 0; n < rainCount; n++) {
+                    var rain = rains[n];
+                    rain.move();//移动
+                    if (rain.y > window.innerHeight) {//超出界限后重来
+                        context.clearRect(rain.x, rain.y - rain.height, rain.width, rain.height);
+                        rains[n] = new MeteorRain();
+                        rains[n].init();
+                    }
+                }
+                setTimeout("playRains()", 2);
+            }
+    
+            /*流星雨结束*/
+        </script>
+    
+    <style type="text/css">
+        *{
+        margin:0%;
+        padding:0%;
+        text-decoration:none;
+        list-style: none;
+        /*去掉没必要的样式*/
+        }
+        body{
+            background-color: rgb(29,29,29);
+            
+            
+            width: auto;
+            margin: 0 auto;
+            
+        }
+        .container{
+            background-image: url(d:\用户\满月狼人1.jpg);
+            height: 500px;
+            border-width: 0cap;
+            margin:0px auto 0px;
+            
+        }
+        .container3{
+            background:linear-gradient(rgb(127, 184, 235),rgb(40, 46, 150));
+            height: 300px;
+            border-width: 0cap;
+            margin:0px auto 0px;
+            scroll-snap-type:y mandatory;
+            
+        }
+        .container2{
+            color: rgb(255, 255, 255);
+            background-color:rgb(40, 46, 150) ;
+            border-width: 0cap;
+            
+            
+            
+        }
+        .circle1{
+            
+            background:linear-gradient(rgb(255, 255, 255),rgb(127, 184, 235));
+            position: relative;
+            border-radius:720px 720px 0 0;
+            height:1000px;
+            border-width: 0cap;
+            
+        }
+       
+
+        .circle2{
+            background-color: rgb(29, 29, 29);
+           
+            border-radius:720px 720px 0 0;
+            height:1200px;
+            border-width: 0cap;
+            
+        }
+        .left{
+            width: 300px;
+            height: 400px;
+            
+            float: left;
+            }
+        .right{
+            width: 300px;
+            height: 400px;
+            
+            float: right;
+            }   
+        .main{
+           margin-left: 200px;
+           margin-right: 200px;
+           background-color: transparent;
+           height: 400px;
+           
+            }
+            
+        .MOON{
+            color:white;
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            font-size:120px;
+            font-family: "apercu";
+                src: url("https://assets.awwwards.com/assets/fonts/apercu/apercu-light-italic-pro.woff2") format("woff2");
+                font-weight: 400;
+                font-style: normal;
+                 font-display: swap;
+                 transition:transform, .3s;
+                 
+            
+           
+        }
+        .MOON:hover{ 
+            transform: translateY(-10px);
+            transform:translateZ(0);
+            text-shadow: 0px 0px 10px  rgb(255, 255, 255);
+
+        }
+
+        @keyframes scaleDraw{
+            0%{
+                transform: scale(1);
+            }
+            50%{
+                transform: scale(1.2);
+            }
+         }
+
+         @keyframes scaleDraw1{
+            0%{
+                transform: scale(1);
+            }
+            50%{
+                transform: scale(1.1);
+            }
+         }
+       
+        
+    </style>
+</head>
+<body>
+    
+        
+    <div class="container">
+        <style>
+            .h1{
+                font-family: "apercu";
+                src: url("https://assets.awwwards.com/assets/fonts/apercu/apercu-light-italic-pro.woff2") format("woff2");
+                font-weight: 400;
+                font-style: italic;
+                 font-display: swap
+
+            }
+            .moon1{
+            background-color: transparent;
+            border-radius:140px 140px 140px 140px;
+            height:140px;
+            width:140px;
+            position: relative;
+            left: 15px;
+            top:300px;
+            margin：0 auto；
+            margin-top: 200px;
+            transition:transform, .3s;
+            display: inline-block;
+            -webkit-transform:perspective(1px) translateZ(0);
+            transform: perspective(1px) translateZ(0);
+
+            -webkit-animation-name: scaleDraw;/*关键帧名称*/
+            -webkit-animation-timing-function: ease-in-out;/*动画的速度曲线*/
+            -webkit-animation-iteration-count: infinite;/*动画播放的次数*/
+            -webkit-animation-duration:6s;/*动画所花费的时间*/
+            }
+            .moon1:hover{
+                transform: translateY(-10px);
+                -webkit-transform: scale(1.2);/*变大的效果*/
+                box-shadow:  0px 0px 20px  rgb(255, 255, 255);
+
+
+            }
+            .moon2{
+            background-color: transparent;
+            border-radius:140px 140px 140px 140px;
+            width: 140px;
+		    height: 140px;
+		    position: relative;
+            left:140px;
+            bottom:80px;
+
+            margin：0 auto；
+            margin-top: 200px;
+            transition:transform, .3s;
+            display: inline-block;
+            -webkit-transform:perspective(1px) translateZ(0);
+            transform: perspective(1px) translateZ(0);
+
+            -webkit-animation-name: scaleDraw;/*关键帧名称*/
+            -webkit-animation-timing-function: ease;/*动画的速度曲线*/
+            -webkit-animation-iteration-count: infinite;/*动画播放的次数*/
+            -webkit-animation-duration:5s;/*动画所花费的时间*/
+             }
+             
+             .moon2:hover{
+                transform: translateY(-10px);
+                -webkit-transform: scale(1.2);/*变大的效果*/
+                box-shadow:  0px 0px 20px  rgb(255, 255, 255);
+             }
+             .moon3{
+                background-color: transparent;
+            border-radius:140px 140px 140px 140px;
+            height:140px;
+            width:140px;
+           
+            position: relative;
+            left:300px;
+            bottom:300px;
+
+            margin：0 auto；
+            margin-top: 200px;
+            transition:transform, .3s;
+            display: inline-block;
+            -webkit-transform:perspective(1px) translateZ(0);
+            transform: perspective(1px) translateZ(0);
+
+            -webkit-animation-name: scaleDraw1;/*关键帧名称*/
+            -webkit-animation-timing-function: ease-in;/*动画的速度曲线*/
+            -webkit-animation-iteration-count: infinite;/*动画播放的次数*/
+            -webkit-animation-duration:5s;/*动画所花费的时间*/
+
+             }
+             .moon3:hover{
+                transform: translateY(-10px);
+                -webkit-transform: scale(1.2);/*变大的效果*/
+                box-shadow:  0px 0px 20px  rgb(255, 255, 255);
+            }
+            
+             .moon4{
+            background-color: transparent;
+            border-radius:140px 140px 140px 140px;
+            height:140px;
+            width:140px;
+            
+            
+            position: relative;
+            left:470px;
+            bottom:630px;
+
+            margin：0 auto；
+            margin-top: 200px;
+            transition:transform, .3s;
+            display: inline-block;
+            -webkit-transform:perspective(1px) translateZ(0);
+            transform: perspective(1px) translateZ(0);
+
+            -webkit-animation-name: scaleDraw;/*关键帧名称*/
+            -webkit-animation-timing-function: ease-in-out;/*动画的速度曲线*/
+            -webkit-animation-iteration-count: infinite;/*动画播放的次数*/
+            -webkit-animation-duration:6s;/*动画所花费的时间*/
+         }
+            .moon4:hover{
+                transform: translateY(-10px);
+                -webkit-transform: scale(1.2);/*变大的效果*/
+                box-shadow:  0px 0px 20px  rgb(255, 255, 255);
+            }
+
+            .moon5{
+            background-color:white;
+            border-radius:140px 140px 140px 140px;
+            height:140px;
+            width:140px;
+            
+            
+            position: relative;
+            left:640px;
+            bottom:1520px;
+
+            margin:auto;
+            transition:transform, .3s;
+            display: inline-block;
+            -webkit-transform:perspective(1px) translateZ(0);
+            transform: perspective(1px) translateZ(0);
+
+            -webkit-animation-name: scaleDraw1;/*关键帧名称*/
+            -webkit-animation-timing-function: ease;/*动画的速度曲线*/
+            -webkit-animation-iteration-count: infinite;/*动画播放的次数*/
+            -webkit-animation-duration:4.5s;/*动画所花费的时间*/
+         }
+         
+         
+         .moon5:hover{
+                transform: translateY(-10px);
+                -webkit-transform: scale(1.2);/*变大的效果*/
+                box-shadow:  0px 0px 20px  rgb(255, 255, 255);
+            }
+         
+        .PIC{
+            position: relative;
+            bottom:1450px;
+            left:665px;
+            -webkit-transition: opacity 2s linear;
+           -moz-transition: opacity 1s linear;
+           -o-transition: opacity 1s linear;
+           transition: opacity 1s linear;
+            opacity:0;
+            visibility: hidden;
+            
+            
+        }
+        .moon5:hover+.PIC{
+            visibility: visible;
+            opacity: 1;
+           
+            }
+        .moon5:hover+.PIC::after{
+            visibility: visible;
+            opacity:1;  
+            
+            
+           
+            }
+        
+        .pic1{
+            width: 400px;
+            border-radius:20px 20px 20px 20px;
+            left: 400px;
+            position: relative;
+            top: -100px;
+            animation: floatText 2s ease;
+            box-shadow:  0px 0px 40px   rgb(255, 255, 255);
+            
+        }
+        .pic2{
+            width: 400px;
+            border-radius:20px 20px 20px 20px;
+            right: 450px;
+            position: relative;
+            top: -100px;
+            animation: floatText 2s ease;
+            box-shadow:  0px 0px 40px  rgb(255, 255, 255);
+        }
+        @keyframes floatText {
+           0% {
+         transform: scale(0.9);
+        }
+        100% {
+         transform: scale(1);
+              }
+           }
+        
+        .moon6{
+            background-color: transparent;
+            border-radius:140px 140px 140px 140px;
+            height:140px;
+            width:140px;
+            
+            
+            position: relative;
+            left:810px;
+            bottom:775px;
+
+            margin:auto;
+            transition:transform, .3s;
+            display: inline-block;
+            -webkit-transform:perspective(1px) translateZ(0);
+            transform: perspective(1px) translateZ(0);
+
+            -webkit-animation-name: scaleDraw;/*关键帧名称*/
+            -webkit-animation-timing-function: ease-in;/*动画的速度曲线*/
+            -webkit-animation-iteration-count: infinite;/*动画播放的次数*/
+            -webkit-animation-duration:6s;/*动画所花费的时间*/
+         }
+         .moon6:hover{
+                transform: translateY(-10px);
+                -webkit-transform: scale(1.2);/*变大的效果*/
+                box-shadow:  0px 0px 20px  rgb(255, 255, 255);
+            }
+        .moon7{
+            background-color: transparent;
+            border-radius:140px 140px 140px 140px;
+            height:140px;
+            width:140px;
+            
+            
+            position: relative;
+            left:980px;
+            bottom:860px;
+
+            margin:auto;
+            transition:transform, .3s;
+            display: inline-block;
+            -webkit-transform:perspective(1px) translateZ(0);
+            transform: perspective(1px) translateZ(0);
+
+            -webkit-animation-name: scaleDraw;/*关键帧名称*/
+            -webkit-animation-timing-function: ease;/*动画的速度曲线*/
+            -webkit-animation-iteration-count: infinite;/*动画播放的次数*/
+            -webkit-animation-duration:5s;/*动画所花费的时间*/
+         }
+         .moon7:hover{
+                transform: translateY(-10px);
+                -webkit-transform: scale(1.2);/*变大的效果*/
+                box-shadow:  0px 0px 20px  rgb(255, 255, 255);
+            }
+        .moon8{
+            background-color: transparent;
+            border-radius:140px 140px 140px 140px;
+            height:140px;
+            width:140px;
+            
+            
+            position: relative;
+            left:1140px;
+            bottom:1050px;
+
+            margin:auto;
+            transition:transform, .3s;
+            display: inline-block;
+            -webkit-transform:perspective(1px) translateZ(0);
+            transform: perspective(1px) translateZ(0);
+
+            -webkit-animation-name: scaleDraw1;/*关键帧名称*/
+            -webkit-animation-timing-function: ease;/*动画的速度曲线*/
+            -webkit-animation-iteration-count: infinite;/*动画播放的次数*/
+            -webkit-animation-duration:4.5s;/*动画所花费的时间*/
+         }
+         .moon8:hover{
+                transform: translateY(-10px);
+                -webkit-transform: scale(1.2);/*变大的效果*/
+                box-shadow:  0px 0px 20px  rgb(255, 255, 255);
+            }
+        .moon9{
+            background-color: transparent;
+            border-radius:140px 140px 140px 140px;
+            height:140px;
+            width:140px;
+            
+            
+            position: relative;
+            left:1280px;
+            bottom:1060px;
+
+            margin:auto;
+            transition:transform, .3s;
+            display: inline-block;
+            -webkit-transform:perspective(1px) translateZ(0);
+            transform: perspective(1px) translateZ(0);
+
+            -webkit-animation-name: scaleDraw;/*关键帧名称*/
+            -webkit-animation-timing-function: ease-in;/*动画的速度曲线*/
+            -webkit-animation-iteration-count: infinite;/*动画播放的次数*/
+            -webkit-animation-duration:6s;/*动画所花费的时间*/
+         }
+         .moon9:hover{
+                transform: translateY(-10px);
+                -webkit-transform: scale(1.2);/*变大的效果*/
+                box-shadow:  0px 0px 20px  rgb(255, 255, 255);
+            }   
+        
+        #bt1{
+            
+            background-color: rgb(255, 255, 255);
+			
+            border-radius:140px 140px 140px 140px;
+            height:140px;
+            width:140px;
+            font-family: "apercu";
+                src: url("https://assets.awwwards.com/assets/fonts/apercu/apercu-light-italic-pro.woff2") format("woff2");
+                font-weight: 60;
+                font-style: normal;
+                 font-display: swap;
+        }
+        #stars{
+            position: relative;
+            bottom: 600px;  
+        align-content: center;          
+            
+
+        }
+        .text1{
+            color: white;
+            position: relative;
+            left:100px;
+            top:200px;
+            font-family: "apercu";
+                src: url("https://assets.awwwards.com/assets/fonts/apercu/apercu-light-italic-pro.woff2") format("woff2");
+            font-size: small;
+            font-weight: 60;
+                font-style: normal;
+        }
+        .moons{
+            position: relative;
+            right: 650px;
+            top:-200px;
+        }
+        .text2{
+            
+            text-align: center;
+            position: relative;
+            bottom: 1700px;
+            left:520px;
+            width:400px;
+            font-family: "apercu";
+                src: url("https://assets.awwwards.com/assets/fonts/apercu/apercu-light-italic-pro.woff2") format("woff2");
+            font-size: small;
+            font-weight: 60;
+                font-style: normal;
+        }
+       
+        </style>
+
+         
+        <div class="left">
+            <h1  class="text1">
+            1111111111111111111111111111
+        </h1>  
+        </div>
+        <div class="right"></div>
+        <div class="main">
+            <h1 align="center" class="MOON">Phase of the Moon</h1>
+            
+        </div>
+        <canvas  id="stars"></canvas>
+    </div>
+    <div class="circle1">
+     <div align="center" class="moons">
+        <style>
+            .moon1text{
+                text-decoration: double;
+                background-color: rgb(255, 255, 255);
+                border-radius:20px 20px 20px 20px;
+                width: 400px;
+                height: 90px;
+                position: relative;
+                left: 320px;
+                top:170px;
+                font-size:smaller;   
+                position: relative;
+                
+                -webkit-transition: opacity 2s linear;
+                -moz-transition: opacity 1s linear;
+                -o-transition: opacity 1s linear;
+                transition: opacity 1s linear;
+                 opacity:0;
+                 visibility: hidden;
+                
+            }
+            
+            .moon1:hover+.moon1text{
+            opacity: 1;
+            visibility: visible;
+            }
+            .moon1:hover+.moon1text{
+            opacity:1;  
+            visibility: visible;
+              }
+            .moon3text{
+                text-decoration: double;
+                background-color: rgb(255, 255, 255);
+                border-radius:20px 20px 20px 20px;
+                width: 400px;
+                height: 135px;
+                position: relative;
+                left: 520px;
+                top:-300px;
+                font-size:smaller;   
+                position: relative;
+                
+                -webkit-transition: opacity 2s linear;
+                -moz-transition: opacity 1s linear;
+                -o-transition: opacity 1s linear;
+                transition: opacity 1s linear;
+                 opacity:0;
+                 visibility: hidden;
+                
+            }
+            
+            .moon3:hover+.moon3text{
+            opacity: 1;
+            visibility: visible;
+            }
+            .moon3:hover+.moon3text{
+            opacity:1;  
+            visibility: visible;
+            
+            }
+            .moon5text{
+                text-decoration: double;
+                background-color: rgb(255, 255, 255);
+                border-radius:20px 20px 20px 20px;
+                width: 400px;
+                height: 115px;
+                position: relative;
+                left: 320px;
+                top:85px;
+                font-size:smaller;   
+                position: relative;
+                
+                -webkit-transition: opacity 2s linear;
+                -moz-transition: opacity 1s linear;
+                -o-transition: opacity 1s linear;
+                transition: opacity 1s linear;
+                
+                
+            }
+            
+            
+            .moon7text{
+                text-decoration: double;
+                background-color: rgb(255, 255, 255);
+                border-radius:20px 20px 20px 20px;
+                width: 400px;
+                height: 135px;
+                position: relative;
+                left: 680px;
+                top:-900px;
+                font-size:smaller;   
+                position: relative;
+                
+                -webkit-transition: opacity 2s linear;
+                -moz-transition: opacity 1s linear;
+                -o-transition: opacity 1s linear;
+                transition: opacity 1s linear;
+                 opacity:0;
+                 visibility: hidden;
+                
+            }
+            
+            .moon7:hover+.moon7text{
+            opacity: 1;
+            visibility: visible;
+            }
+            .moon7:hover+.moon7text{
+            opacity:1;  
+            visibility: visible;
+            
+            }
+        </style>
+        <div> 
+            
+            <img class="moon1" title="新月" src="M1.svg"/>
+            <div class="moon1text"> 
+                <p1> 朔日（新月）——补气养血 </p1>
+                <p>当月球转到地球和太阳之间时，出现的月相叫“朔”。
+                    “朔日”则是农历的每月初一。“朔”这段时间的月相是“月缺无光”，
+                    白天阳气渐弱，夜晚阴气渐虚。此时人体的特点是阳气弱，
+                    气血也处在比较亏虚的状态，抵抗力相对较弱。
+                </p> 
+            </div>
+            
+        </div>
+        <div> 
+            <img class="moon2" title="蛾眉月" src="M2.svg"/>
+        </div>
+        <div> 
+            <img class="moon3" title="上弦月" src="M3.svg"/>
+            <div class="moon3text"> 
+                <p1> 上弦——疏肝利胆 </p1>
+                <p>当月球转到与太阳呈90度角时，出现的月相叫“上弦月”。
+                    上弦指的是农历初七前后，处于月周期涨落潮的中间段。
+                    上弦白天阳气渐长，夜晩阴气渐生，阴阳都处于升发阶段，
+                    尤其是阳气的升发较为明显。中医讲究“肝主阳”，因此，
+                    这段时间是肝病、胆囊炎等疾病的易发和加重期，尤其是
+                    下半夜和清晨，是犯病的危险期。所以，上弦的总体养生原则是疏肝利胆。
+                  
+                </p> 
+            </div>
+        </div>
+        <div> 
+            <img class="moon4" title="上凸月" src="M4.svg"/>
+        </div>
+   
+      
+       
+        <div> 
+            <img class="moon6" title="下凸月" src="M6.svg"/>
+        </div>
+        
+        <div> 
+            <img class="moon7" title="下弦月" src="M7.svg"/>
+            <div class="moon7text"> 
+                <p1> 下弦——宜补不宜泄 </p1>
+                <p>过了十五月亮最圆的时候，接着月亮渐渐亏缺，到二十
+                    三左右为下弦月，三十的时候月亮全亏，即为“晦”。
+                    《黄帝内经》有云：“月升无泄，月满无补”，意思是告诫人们，
+                    月亮刚刚开始升起的时候，养生宜补不宜泄；在月满的时候，
+                    宜泄不宜补。所以，下弦月养生更应以补为主，不可做一些损伤元气之事。
+                    对于年轻人而言，大忌就是熬夜。为避免对身体有所损伤，早睡早起是十分必要的。
+                  
+                </p> 
+            </div>
+        </div>
+        <div> 
+            <img class="moon8" title="残月" src="M8.svg"/>
+        </div>
+        <div> 
+            <img class="moon9" title="新月" src="M9.svg"/>
+        </div>
+       
+        <div class="moon5" title="满月">
+            <button id="bt1" onclick="funb()" >Full Moon</button>
+        </div>
+
+         <div class="PIC">   
+         <img class="pic1" src="d:\用户\满月狼人1.jpg" alt="">
+         <img class="pic2" src="d:\用户\满月吸血鬼.jpg" alt="">
+         
+         
+     </div>
+         
+          
+        
+     </div>
+     <h1 class="text2">
+        The lunar phase is the astronomical term for the part of the moon seen from Earth illuminated by the sun. 
+        The motion of the moon around the Earth causes the relative positions of the sun, Earth and Moon to change 
+        regularly throughout the month.
+    </h1>  
+    </div>
+    <div class="container3">
+        
+        <style>
+        .main1{
+           margin-left: 200px;
+           margin-right: 200px;
+           width: 80%;
+           height: 400px;
+        }
+        .creature{
+            color：rgb(29,29,29);
+            font-size:60px;
+        }
+        .lside1{
+            color：rgb(29,29,29);
+            
+            float:above;
+            
+        }
+        .p2{
+            color：rgb(29,29,29);
+            font-size:100px;
+            float:middle;
+            
+            
+        }
+        </style>
+        <div class="left1">
+            <h1 align="left" class="text1.1">填充内容</h1>  
+        </div>
+        <div class="right1"></div>
+        <div class="main1"></div>
+    
+    </div>
+    <div class="container2">
+       <style>
+        .video-background
+        {
+            border-radius:720px 720px 0 0; 
+            height:1200px; 
+            opacity: 0.2;/*透明度*/
+            border-width: 0cap;
+        }
+        .video-box {
+            position: relative;
+            height: 100vh;
+            
+            /*进行视频裁剪*/
+            overflow: hidden;
+            }
+        .video-box，.video-background{ 
+            position: absolute;
+            
+            /*保证视频内容始终居中*/
+             transform: translate(-50%, -50%);
+            width:100%;
+            height: 100%;
+            
+            min-height: 800px;  
+            
+            /*加滤镜*/
+            /*filter: blur(15px); //背景模糊设置 */
+            /*-webkit-filter: grayscale(100%);*/  
+            /*filter:grayscale(100%); //背景灰度设置*/  
+            
+        }  
+        .creature1{
+            
+            color:white;
+            position: relative;
+            top: 40px;
+            width: fit-content;
+            margin: auto;
+            font-size:60px;
+            font-family: "apercu";
+                src: url("https://assets.awwwards.com/assets/fonts/apercu/apercu-light-italic-pro.woff2") format("woff2");
+                font-weight: 400;
+                font-style: normal;
+                 font-display: swap;
+                 transition: all .5s ease;     
+        }
+        .creature1:hover {
+         color:rgb(78, 128, 255);
+             }
+
+        .creature1:after {
+           content: "";
+           width: 100%;
+           height: 3px;
+           background:rgb(78, 128, 255);
+           position: absolute;
+           bottom: 0;
+           left: 0;
+            right: 0;
+           opacity: 0;
+            transition: all .5s ease;
+            transform: scaleX(0);
+        }
+
+        .creature1:hover:after {
+             opacity: 1;
+              transform: scaleX(1);
+           }
+       </style>
+        <div class="circle2">
+            
+            <div class="lside1">
+                
+            </div>
+            <div class="middle1">
+                
+                <h1 align="middle" class="creature1">CREATURE</h1>
+                
+            </div>
+           
+            <head2>
+                
+                <!-- 引入 ECharts 文件 -->
+                <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+                <title>桑基图demo</title>
+                <style>
+                    *{
+                        margin:0;
+                        padding:0;
+                    }
+                   
+                    #main{
+                        position: relative;
+                        left:100px;
+                        top:100px;
+                        height:60%;
+                    }
+                    
+                    {
+                        background-color: aliceblue;
+                    }
+                   
+                </style>
+            </head2>
+            <body2>
+            <div align="center" id="main"></div>
+            <script type="text/javascript" src="echarts.min.js"></script>
+            <script>
+                var myChart = echarts.init(document.getElementById('main'));
+                var city={
+                    '鳀科 Engraulidae':'#ff8a45',
+                    '鲤科 Cyprinidae':'#4992ff',
+                    '鲿科 Bagridae':'#dd79ff',
+                    '胡瓜鱼科 Osmeridae':'#fddd60',
+                    
+                    '狼鲈科 Moronidae':'#ff8a45',
+                    '真鲈科 Percichthyidae':'#4992ff',
+                    '虾虎鱼科 Gobiidae':'#58d9f9',
+                    '舌鳎科 Cynoglossidae':'#8d48e3',
+
+                    '刀鲚 Coilia nasus':'#05c091',
+                    '棒花鱼 Abbottina rivularis':'#ff8a45',
+                    '鲫 Carassius auratus':'#4992ff',
+                    '铜鱼 Coreius heterodon':'#58d9f9',
+                    '草鱼 Ctenopharyngodon idella':'#fddd60',
+                    '翘嘴鲌 Culter alburnus':'#05c091',
+                    '鲤 Cyprinus carpio':'#ff8a45',
+                    '鳡鱼 Elopichthys bambusa':'#4992ff',
+                    '青鱼 Mylopharyngodon piceus':'#58d9f9',
+                    '鳊鱼 Parabramis pekinensis':'#fddd60',
+                    '似鳊 Pseudobrama simoni':'#ff8a45',
+                    '寡鳞飘鱼 Pseudolaubuca engraulis':'#4992ff',
+                    '银飘鱼 Pseudolaubuca sinensis':'#dd79ff',
+                    '赤眼鳟 Squaliobarbus curriculus':'#fddd60',
+                    '黄颡鱼 Pelteobagrus fulvidraco':'#05c091',
+                    '瓦氏黄颡鱼 Pelteobagrus vachellii':'#ff8a45',
+                    '安氏新银鱼 Neosalanx anderssoni':'#4992ff',
+                    '太湖新银鱼 Neosalanx taihuensis':'#58d9f9',
+                    '大银鱼 Protosalanx hyalocranius':'#fddd60',
+                    '有明银鱼 Salanx ariakensis':'#05c091',
+                    '中国花鲈 Lateolabrax maculatus':'#ff8a45',
+                    '鳜 Siniperca chuatsi':'#4992ff',
+                    '睛尾蝌蚪虾虎鱼 Lophiogobius ocellicauda':'#dd79ff',
+                    '中华多椎虾虎鱼 Polyspondylogobius sinensis':'#fddd60',
+                    '子陵吻虾虎鱼 Rhinogobius giurinus':'#05c091',
+                    '纹缟虾虎鱼 Tridentiger trigonocephalus':'#ff8a45',
+                    '短吻舌鳎 Cynoglossus abbreviatus':'#4992ff',
+                    '青鱼 Mylopharyngodon piceus':'#58d9f9',
+                   
+                    '卵黄囊期仔鱼':'#4992ff',
+                    '前弯曲期仔鱼':'#58d9f9',
+                    '弯曲期仔鱼':'#fddd60',
+                    '后弯曲期仔鱼':'#05c091',
+                    '稚鱼':'#ff8a45',
+                
+                    
+            
+                   
+            
+            
+            
+                }
+                var population=[
+                    {source: "鳀科 Engraulidae", target: "刀鲚 Coilia nasus",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "棒花鱼 Abbottina rivularis",value:1},
+                    {source: "鲤科 Cyprinidae", target: "鲫 Carassius auratus",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "铜鱼 Coreius heterodon",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "草鱼 Ctenopharyngodon idella",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "鲤 Cyprinus carpio",value:1},
+                    {source: "鲤科 Cyprinidae", target: "鳡鱼 Elopichthys bambusa",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "青鱼 Mylopharyngodon piceus",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "鳊鱼 Parabramis pekinensis",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "翘嘴鲌 Culter alburnus",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "似鳊 Pseudobrama simoni",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "寡鳞飘鱼 Pseudolaubuca engraulis",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "银飘鱼 Pseudolaubuca sinensis",value: 1},
+                    {source: "鲤科 Cyprinidae", target: "赤眼鳟 Squaliobarbus curriculus",value: 1},
+                    {source: "鲿科 Bagridae", target: "黄颡鱼 Pelteobagrus fulvidraco",value: 1},
+                    {source: "鲿科 Bagridae", target: "瓦氏黄颡鱼 Pelteobagrus vachellii",value: 1},
+                    {source: "胡瓜鱼科 Osmeridae", target: "安氏新银鱼 Neosalanx anderssoni",value: 1},
+                    {source: "胡瓜鱼科 Osmeridae", target: "太湖新银鱼 Neosalanx taihuensis",value: 1},
+                    {source: "胡瓜鱼科 Osmeridae", target: "大银鱼 Protosalanx hyalocranius",value: 1},
+                    {source: "胡瓜鱼科 Osmeridae", target: "有明银鱼 Salanx ariakensis",value: 1},
+                    {source: "狼鲈科 Moronidae", target: "中国花鲈 Lateolabrax maculatus",value: 1},
+                    {source: "真鲈科 Percichthyidae", target: "鳜 Siniperca chuatsi",value: 1},
+                    {source: "虾虎鱼科 Gobiidae", target: "睛尾蝌蚪虾虎鱼 Lophiogobius ocellicauda",value: 1},
+                    {source: "虾虎鱼科 Gobiidae", target: "中华多椎虾虎鱼 Polyspondylogobius sinensis",value: 1},
+                    {source: "虾虎鱼科 Gobiidae", target: "子陵吻虾虎鱼 Rhinogobius giurinus",value: 1},
+                    {source: "虾虎鱼科 Gobiidae", target: "纹缟虾虎鱼 Tridentiger trigonocephalus",value: 1},
+                    {source: "舌鳎科 Cynoglossidae", target: "短吻舌鳎 Cynoglossus abbreviatus",value: 1},
+                
+            
+                    {source: "刀鲚 Coilia nasus", target: "前弯曲期仔鱼",value: 1},
+                    {source: "刀鲚 Coilia nasus", target: "弯曲期仔鱼",value: 1},
+                    {source: "刀鲚 Coilia nasus", target: "后弯曲期仔鱼",value: 1},
+                    {source: "刀鲚 Coilia nasus", target: "稚鱼",value: 1},
+            
+                    {source: "棒花鱼 Abbottina rivularis", target: "前弯曲期仔鱼",value: 1},
+                    {source: "棒花鱼 Abbottina rivularis", target: "弯曲期仔鱼",value: 1},
+                    {source: "棒花鱼 Abbottina rivularis", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "鲫 Carassius auratus", target: "前弯曲期仔鱼",value: 1},
+                    {source: "鲫 Carassius auratus", target: "弯曲期仔鱼",value: 1},
+                    {source: "鲫 Carassius auratus", target: "后弯曲期仔鱼",value: 1},
+                    {source: "鲫 Carassius auratus", target: "稚鱼",value: 1},
+                    
+            
+                    {source: "翘嘴鲌 Culter alburnus", target: "前弯曲期仔鱼",value: 1},
+                    {source: "翘嘴鲌 Culter alburnus", target: "弯曲期仔鱼",value: 1},
+                    {source: "翘嘴鲌 Culter alburnus", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "铜鱼 Coreius heterodon", target: "前弯曲期仔鱼",value: 1},
+            
+                    {source: "草鱼 Ctenopharyngodon idella", target: "前弯曲期仔鱼",value: 1},
+                    {source: "草鱼 Ctenopharyngodon idella", target: "弯曲期仔鱼",value: 1},
+            
+                    {source: "鲤 Cyprinus carpio", target: "前弯曲期仔鱼",value: 1},
+            
+                    {source: "鳡鱼 Elopichthys bambusa", target: "前弯曲期仔鱼",value: 1},
+                    {source: "鳡鱼 Elopichthys bambusa", target: "弯曲期仔鱼",value: 1},
+            
+                    {source: "青鱼 Mylopharyngodon piceus", target: "前弯曲期仔鱼",value: 1},
+                    {source: "青鱼 Mylopharyngodon piceus", target: "弯曲期仔鱼",value: 1},
+            
+                    {source: "鳊鱼 Parabramis pekinensis", target: "前弯曲期仔鱼",value: 1},
+                    {source: "鳊鱼 Parabramis pekinensis", target: "弯曲期仔鱼",value: 1},
+                    {source: "鳊鱼 Parabramis pekinensis", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "似鳊 Pseudobrama simoni", target: "前弯曲期仔鱼",value: 1},
+                    {source: "似鳊 Pseudobrama simoni", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "寡鳞飘鱼 Pseudolaubuca engraulis", target: "前弯曲期仔鱼",value: 1},
+                    {source: "寡鳞飘鱼 Pseudolaubuca engraulis", target: "弯曲期仔鱼",value: 1},
+                    {source: "寡鳞飘鱼 Pseudolaubuca engraulis", target: "后弯曲期仔鱼",value: 1},
+                    {source: "寡鳞飘鱼 Pseudolaubuca engraulis", target: "稚鱼",value: 1},
+            
+                    {source: "银飘鱼 Pseudolaubuca sinensis", target: "弯曲期仔鱼",value: 1},
+                    {source: "银飘鱼 Pseudolaubuca sinensis", target: "稚鱼",value: 1},
+            
+                    {source: "赤眼鳟 Squaliobarbus curriculus", target: "前弯曲期仔鱼",value: 1},
+            
+                    {source: "黄颡鱼 Pelteobagrus fulvidraco", target: "前弯曲期仔鱼",value: 1},
+                    {source: "黄颡鱼 Pelteobagrus fulvidraco", target: "弯曲期仔鱼",value: 1},
+                    {source: "黄颡鱼 Pelteobagrus fulvidraco", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "瓦氏黄颡鱼 Pelteobagrus vachellii", target: "弯曲期仔鱼",value: 1},
+            
+                    {source: "太湖新银鱼 Neosalanx taihuensis", target: "前弯曲期仔鱼",value: 1},
+                    {source: "太湖新银鱼 Neosalanx taihuensis", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "大银鱼 Protosalanx hyalocranius", target: "前弯曲期仔鱼",value: 1},
+                    {source: "大银鱼 Protosalanx hyalocranius", target: "弯曲期仔鱼",value: 1},
+                    {source: "大银鱼 Protosalanx hyalocranius", target: "后弯曲期仔鱼",value: 1},
+                    {source: "大银鱼 Protosalanx hyalocranius", target: "稚鱼",value: 1},
+            
+                    {source: "鳜 Siniperca chuatsi", target: "卵黄囊期仔鱼",value: 1},
+                    {source: "鳜 Siniperca chuatsi", target: "前弯曲期仔鱼",value: 1},
+                    {source: "鳜 Siniperca chuatsi", target: "弯曲期仔鱼",value: 1},
+                    {source: "鳜 Siniperca chuatsi", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "子陵吻虾虎鱼 Rhinogobius giurinus", target: "前弯曲期仔鱼",value: 1},
+                    {source: "子陵吻虾虎鱼 Rhinogobius giurinus", target: "弯曲期仔鱼",value: 1},
+                    {source: "子陵吻虾虎鱼 Rhinogobius giurinus", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "安氏新银鱼 Neosalanx anderssoni", target: "前弯曲期仔鱼",value: 1},
+                    {source: "安氏新银鱼 Neosalanx anderssoni", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "纹缟虾虎鱼 Tridentiger trigonocephalus", target: "前弯曲期仔鱼",value: 1},
+                    {source: "纹缟虾虎鱼 Tridentiger trigonocephalus", target: "弯曲期仔鱼",value: 1},
+                    {source: "纹缟虾虎鱼 Tridentiger trigonocephalus", target: "后弯曲期仔鱼",value: 1},
+            
+                    {source: "中国花鲈 Lateolabrax maculatus", target: "后弯曲期仔鱼",value: 1},
+                    {source: "中国花鲈 Lateolabrax maculatus", target: "稚鱼",value: 1},
+            
+                    {source: "短吻舌鳎 Cynoglossus abbreviatus", target: "前弯曲期仔鱼",value: 1},
+                    {source: "短吻舌鳎 Cynoglossus abbreviatus", target: "稚鱼",value: 1},
+            
+                    {source: "有明银鱼 Salanx ariakensis", target: "稚鱼",value: 1},
+            
+                    {source: "睛尾蝌蚪虾虎鱼 Lophiogobius ocellicauda", target: "前弯曲期仔鱼",value: 1},
+                    {source: "睛尾蝌蚪虾虎鱼 Lophiogobius ocellicauda", target: "稚鱼",value: 1},
+            
+                    {source: "中华多椎虾虎鱼 Polyspondylogobius sinensis", target: "后弯曲期仔鱼",value: 1},
+                    
+                    
+                    
+            
+            ];
+                var data=[];
+                var citylist=[];
+                for(var key in city){
+                    citylist.push(
+                        {name: key,itemStyle: {color:city[key]}}
+                    )
+                }
+                for(var i=0;i<population.length;i++){
+                    var color=new echarts.graphic.LinearGradient(0, 0, 1, 0, [{
+                            offset: 0,
+                            color: city[population[i].source]
+                        },{
+                            offset: 1,
+                            color: city[population[i].target]
+                        }]
+                    )
+                    data.push(
+                        {source: population[i].source,
+                        target: population[i].target,
+                        value: population[i].value,
+                            lineStyle: {
+                            color:color
+                            }
+                        }
+                    )
+                }
+                option = {
+                    title: {
+                        text: '长江口南支仔稚鱼种类组成',
+                        
+                        top: 'top',
+                        left: '35%'
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        triggerOn: 'mousemove'
+                    },
+                    series: [
+                        {
+                            type: 'sankey',
+                            data: citylist,
+                            links: data,
+                            focusNodeAdjacency: 'allEdges',
+                            itemStyle: {
+                    
+                                color:'#1b6199',
+                                
+                            },
+                            lineStyle: {
+                                curveness: 0.5,
+                                opacity:0.5
+                            }
+                        }
+                    ]
+                }
+                myChart.setOption(option);
+            </script>
+            </body2>
+             
+        </div>
+    </div>
+</div>
+   
+</body>
+</html>
